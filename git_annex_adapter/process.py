@@ -544,6 +544,31 @@ class GitAnnexContentlocationBatchProcess(GitAnnexBatchProcess):
             raise
 
 
+class GitAnnexWhereisBatchProcess(GitAnnexBatchProcess):
+    """
+    Helper class that interacts with git-annex whereis --batch.
+
+    """
+    def __init__(self, workdir):
+        super().__init__(['whereis', '--json'], workdir)
+
+    def __call__(self, key):
+        """
+        Sends a git-annex key to the process, and returns the output.
+        """
+        try:
+            return super().__call__('--key=' + key)
+
+        except subprocess.CalledProcessError as err:
+            logger.debug("Unknown error:\n", exc_info=True)
+            logger.debug("stderr:\n{}".format(err.stderr))
+            raise
+
+        except:
+            logger.debug("Unknown error:\n", exc_info=True)
+            raise
+
+
 class ProcessRunner:
     """
     Helper class to repeatedly run a program with different arguments

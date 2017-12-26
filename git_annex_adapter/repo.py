@@ -19,11 +19,13 @@ import types
 import collections.abc
 import logging
 import pygit2
+import json
 
 from .exceptions import NotAGitRepoError
 from .exceptions import NotAGitAnnexRepoError
 from .process import GitAnnexMetadataBatchJsonProcess
 from .process import GitAnnexContentlocationBatchProcess
+from .process import GitAnnexWhereisBatchProcess
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,8 @@ class GitAnnex(collections.abc.Mapping):
             GitAnnexMetadataBatchJsonProcess(self.repo.workdir)
         self.processes.contentlocation = \
             GitAnnexContentlocationBatchProcess(self.repo.workdir)
+        self.processes.whereis = \
+            GitAnnexWhereisBatchProcess(self.repo.workdir)
 
     def get_file_tree(self, treeish='HEAD'):
         """Returns an AnnexedFileTree for the given treeish"""
@@ -180,6 +184,21 @@ class AnnexedFile:
         self.key = key
         self.metadata = AnnexedFileMetadata(self)
         self._contentlocation = None
+        self._locations = set()
+
+    @property
+    def locations(self):
+        """Returns a set of repositories, where the contents of the file are located."""
+        if self._locations:
+            return self._locations
+
+        process = self.repo.annex.processes.whereis
+        result = json.loads(process(self.key))
+
+        for l in result['whereis']:
+            self._locations.add(l['uuid'])
+
+        return self._locations
 
     @property
     def contentlocation(self):
