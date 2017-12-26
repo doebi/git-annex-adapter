@@ -428,7 +428,7 @@ class GitAnnexBatchProcess:
         self._process = new_process
         return self._process
 
-    def __call__(self, line):
+    def __call__(self, line=None):
         p = self.process
         output = p(line)
 
@@ -544,9 +544,9 @@ class GitAnnexContentlocationBatchProcess(GitAnnexBatchProcess):
             raise
 
 
-class GitAnnexWhereisBatchProcess(GitAnnexBatchProcess):
+class GitAnnexWhereisProcess(GitAnnexBatchProcess):
     """
-    Helper class that interacts with git-annex whereis --batch.
+    Helper class that interacts with git-annex whereis --json.
 
     """
     def __init__(self, workdir):
@@ -558,6 +558,31 @@ class GitAnnexWhereisBatchProcess(GitAnnexBatchProcess):
         """
         try:
             return super().__call__('--key=' + key)
+
+        except subprocess.CalledProcessError as err:
+            logger.debug("Unknown error:\n", exc_info=True)
+            logger.debug("stderr:\n{}".format(err.stderr))
+            raise
+
+        except:
+            logger.debug("Unknown error:\n", exc_info=True)
+            raise
+
+
+class GitAnnexInfoProcess(GitAnnexBatchProcess):
+    """
+    Helper class that interacts with git-annex info.
+
+    """
+    def __init__(self, workdir):
+        super().__init__(['info', '--json'], workdir)
+
+    def __call__(self):
+        """
+        Sends a git-annex key to the process, and returns the output.
+        """
+        try:
+            return super().__call__()
 
         except subprocess.CalledProcessError as err:
             logger.debug("Unknown error:\n", exc_info=True)
